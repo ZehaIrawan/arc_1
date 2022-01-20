@@ -1,2 +1,0 @@
-# Run
-node scribe.js
