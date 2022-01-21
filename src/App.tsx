@@ -9,7 +9,7 @@ function App() {
   const uploadFiles = (file: any) => {
     //
     if (!file) return;
-    const sotrageRef = ref(storage, `files/${file.name}`);
+    const sotrageRef = ref(storage, `${file.name}`);
     const uploadTask = uploadBytesResumable(sotrageRef, file);
 
     uploadTask.on(
