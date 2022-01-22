@@ -2,6 +2,7 @@ import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import React from 'react';
 import { storage } from './base';
 import Home from './components/Home';
+import Display from './components/Display';
 
 function App() {
   const [progress, setProgress] = React.useState(0);
@@ -48,6 +49,7 @@ function App() {
         {progress}
         %
       </h2>
+      <Display />
     </>
   );
 }
