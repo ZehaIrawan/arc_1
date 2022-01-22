@@ -24,3 +24,4 @@ yarn-error.log*
 
 /functions/lib
 /functions/firebase-debug.log
+/src/videos/airline.mp4
