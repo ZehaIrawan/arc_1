@@ -3,6 +3,16 @@ const ffmpeg = require('fluent-ffmpeg')
 const { Storage } = require('@google-cloud/storage')
 const path = require('path')
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
+const speech = require('@google-cloud/speech')
+const keyfile = require("../suboto-339002-588c76d20a36.json")
+
+const config = {
+  projectId: keyfile.project_id,
+  keyFilename: require.resolve("../suboto-339002-588c76d20a36.json")
+};
+
+
+const speechClient = new speech.SpeechClient(config)
 // Start writing Firebase Functions
 // https://firebase.google.com/docs/functions/typescript
 
@@ -40,7 +50,7 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
         })
     }
 
-    async function extractAudio(fileinfo: any) {
+    async function getAudio(fileinfo: any) {
         let tempAudioPath = '/tmp/' + fileinfo.source.name + '.flac'
         fileinfo.destination.temp.audio = tempAudioPath
         try {
@@ -70,12 +80,34 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
         return uploadToBucket(flacBucket, filepath)
     }
 
-    async function complete() {
+    function getFilePathFromFile(storageFile: any) {
+        return `gs://${storageFile.bucket.name}/${storageFile.name}`
+    }
+
+    function makeSpeechRequest(request: any) {
+        console.log(`making request for ${JSON.stringify(request)}`)
+        return new Promise((resolve, reject) => {
+            speechClient
+                .longRunningRecognize(request)
+                .then(function (responses: any) {
+                    var operation = responses[0]
+                    return operation.promise()
+                })
+                .then(function (responses: any) {
+                    resolve(responses[0])
+                })
+                .catch(function (err: any) {
+                    reject(err)
+                })
+        })
+    }
+
+    async function extractAudio() {
         try {
             const videoFile = await videoBucket.file(fileName)
             const downloadedFile = await downloadFile(videoFile, fileName)
             const fileinfo = await downloadedFile
-            const audioFile = await extractAudio(fileinfo)
+            const audioFile = await getAudio(fileinfo)
             const res = await uploadFlac(audioFile)
             response.send(`Extracted Audio :${JSON.stringify(res[0].metadata)}`)
         } catch (error) {
@@ -83,5 +115,34 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
         }
     }
 
-    complete()
+    async function transcribeAudio() {
+        try {
+            console.log('Transcribing audio')
+            const flacBucket = storageClient.bucket('gs://suboto-audio/')
+            const fileName = 'airline.flac'
+
+            const audioFile = flacBucket.file(fileName);
+            const audioFilePath = getFilePathFromFile(audioFile);
+            console.log(`audioFilePath: ${JSON.stringify(audioFilePath)}`);
+        //    audioFileNameWithoutExtension = path.parse(audioFilePath).name;
+            const request = {
+                "config": {
+                    "enableWordTimeOffsets": true,
+                    "languageCode": "en-US",
+                    "encoding": "FLAC"
+                },
+                "audio": {
+                    "uri": audioFilePath
+                }
+            };
+            const res =  await makeSpeechRequest(request);
+            console.log(JSON.stringify(res));
+            response.send(`Transcribing audio:${JSON.stringify(res)}`)
+        } catch (error) {
+            console.log('error')
+        }
+    }
+
+    // extractAudio()
+    transcribeAudio()
 })
