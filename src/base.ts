@@ -1,5 +1,5 @@
-import { getStorage } from '@firebase/storage';
 import { initializeApp } from 'firebase/app';
+import { getStorage } from 'firebase/storage';
 
 export const app = initializeApp({
   projectId: process.env.REACT_APP_projectId,
