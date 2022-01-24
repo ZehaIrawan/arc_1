@@ -1,16 +1,16 @@
 import * as functions from 'firebase-functions'
+import { generateSRT } from './utils/generateSRT'
 const ffmpeg = require('fluent-ffmpeg')
 const { Storage } = require('@google-cloud/storage')
 const path = require('path')
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const speech = require('@google-cloud/speech')
-const keyfile = require("../suboto-339002-588c76d20a36.json")
+const keyfile = require('../suboto-339002-588c76d20a36.json')
 
 const config = {
-  projectId: keyfile.project_id,
-  keyFilename: require.resolve("../suboto-339002-588c76d20a36.json")
-};
-
+    projectId: keyfile.project_id,
+    keyFilename: require.resolve('../suboto-339002-588c76d20a36.json'),
+}
 
 const speechClient = new speech.SpeechClient(config)
 // Start writing Firebase Functions
@@ -24,7 +24,7 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
     const flacBucket = storageClient.bucket('gs://suboto-audio/')
 
     // The ID of your GCS file
-    const fileName = 'airline.mp4'
+    const fileName = 'afghan.mp4'
 
     function downloadFile(file: any, fileName: any) {
         console.log('Download started for ' + fileName)
@@ -54,15 +54,23 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
         let tempAudioPath = '/tmp/' + fileinfo.source.name + '.flac'
         fileinfo.destination.temp.audio = tempAudioPath
         try {
-            const test = ffmpeg(fileinfo.destination.temp.video)
+         const transform = await ffmpeg(fileinfo.destination.temp.video)
                 .videoBitrate(19200)
                 .inputOptions('-vn')
                 .format('flac')
                 .audioChannels(1)
                 .output(tempAudioPath)
+                .on('end', () => {
+                    console.log('Audio file created')
+                })
+                .on('error', (err: any) => {
+                    console.log(err);
+                }).run()
+
             return tempAudioPath
         } catch (error) {
             console.log(error)
+            return error
         }
     }
 
@@ -76,8 +84,13 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
     }
 
     function uploadFlac(filepath: any) {
-        console.log('Uploading flac to bucket')
-        return uploadToBucket(flacBucket, filepath)
+        try {
+            console.log('Uploading flac to bucket')
+            return uploadToBucket(flacBucket, filepath)
+        } catch (error) {
+            console.log(error)
+            return error
+        }
     }
 
     function getFilePathFromFile(storageFile: any) {
@@ -109,7 +122,7 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
             const fileinfo = await downloadedFile
             const audioFile = await getAudio(fileinfo)
             const res = await uploadFlac(audioFile)
-            response.send(`Extracted Audio :${JSON.stringify(res[0].metadata)}`)
+            response.send(`Extracted Audio :${JSON.stringify(res)}`)
         } catch (error) {
             response.send(error)
         }
@@ -119,25 +132,29 @@ export const HelloWorld = functions.https.onRequest((request, response) => {
         try {
             console.log('Transcribing audio')
             const flacBucket = storageClient.bucket('gs://suboto-audio/')
-            const fileName = 'airline.flac'
+            const fileName = 'afghan.flac'
 
-            const audioFile = flacBucket.file(fileName);
-            const audioFilePath = getFilePathFromFile(audioFile);
-            console.log(`audioFilePath: ${JSON.stringify(audioFilePath)}`);
-        //    audioFileNameWithoutExtension = path.parse(audioFilePath).name;
+            const audioFile = flacBucket.file(fileName)
+            const audioFilePath = getFilePathFromFile(audioFile)
+            console.log(`audioFilePath: ${JSON.stringify(audioFilePath)}`)
+            //    audioFileNameWithoutExtension = path.parse(audioFilePath).name;
             const request = {
-                "config": {
-                    "enableWordTimeOffsets": true,
-                    "languageCode": "en-US",
-                    "encoding": "FLAC"
+                config: {
+                    enableWordTimeOffsets: true,
+                    languageCode: 'en-US',
+                    encoding: 'FLAC',
                 },
-                "audio": {
-                    "uri": audioFilePath
-                }
-            };
-            const res =  await makeSpeechRequest(request);
-            console.log(JSON.stringify(res));
-            response.send(`Transcribing audio:${JSON.stringify(res)}`)
+                audio: {
+                    uri: audioFilePath,
+                },
+            }
+            const googleSpeech = await makeSpeechRequest(request)
+
+            const parsed = JSON.parse(JSON.stringify(googleSpeech))
+
+            const res = generateSRT(parsed)
+            console.log(res)
+            response.send(`Transcribing audio:${res}`)
         } catch (error) {
             console.log('error')
         }
