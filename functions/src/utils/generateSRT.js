@@ -25,9 +25,14 @@ function get_seconds(nanoseconds, wordInfo) {
 }
 
 // seconds to nanos 1_000_000_000
-export function generateSRT(data) {
-    data.results.forEach((result, index) => {
+export function generateSRT(json) {
+    const data = JSON.parse(json)
+    // console.log(typeof data.results,data.results, 'RAA')
+    // data = JSON.parse(data)
+    let result = ''
+data.results.forEach((result, index) => {
         // console.log(`Transcription: ${result.alternatives[0].transcript}`);
+        // console.log(result.alternatives[0].words, 'words');
         result.alternatives[0].words.forEach((wordInfo) => {
             // NOTE: If you have a time offset exceeding 2^32 seconds, use the
             // wordInfo.{x}Time.seconds.high to calculate seconds.
@@ -111,10 +116,11 @@ export function generateSRT(data) {
 
         // const res = stringifySync(data, { format: 'SRT' });
         const res = stringifySync(list, { format: 'SRT' })
-        // console.log(res)
-        // console.log(timestamp);
-        return res
-    })
+        // console.log(timestamp)
+        console.log(res, 'GEN')
+        result = res
+      })
+      return  result
 }
 //  Last year for the first time ever,
 //  -1 secs
