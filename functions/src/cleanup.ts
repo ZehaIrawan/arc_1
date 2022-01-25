@@ -5,6 +5,7 @@ const path = require('path')
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const speech = require('@google-cloud/speech')
 const keyfile = require('../suboto-339002-588c76d20a36.json')
+const fs = require('fs')
 
 const config = {
     projectId: keyfile.project_id,
@@ -18,5 +19,12 @@ const speechClient = new speech.SpeechClient(config)
 ffmpeg.setFfmpegPath(ffmpegPath)
 
 exports.cleanup = functions.https.onRequest((request, response) => {
-     response.send(`NRW`)
+    try {
+        const tempFilePath = '/tmp/afghan.mp4'
+        fs.unlinkSync(tempFilePath)
+        response.send(`Temporary files removed.', ${tempFilePath}`)
+    } catch (error) {
+        console.log(error)
+        response.send('error')
+    }
 })
