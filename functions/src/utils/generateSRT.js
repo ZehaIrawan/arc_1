@@ -29,7 +29,7 @@ export function generateSRT(json) {
     const data = JSON.parse(json)
     // console.log(typeof data.results,data.results, 'RAA')
     // data = JSON.parse(data)
-    let result = ''
+    let sub = 'pax'
 data.results.forEach((result, index) => {
         // console.log(`Transcription: ${result.alternatives[0].transcript}`);
         // console.log(result.alternatives[0].words, 'words');
@@ -117,10 +117,10 @@ data.results.forEach((result, index) => {
         // const res = stringifySync(data, { format: 'SRT' });
         const res = stringifySync(list, { format: 'SRT' })
         // console.log(timestamp)
-        console.log(res, 'GEN')
-        result = res
+        // console.log(res, 'GEN')
+        sub = res
       })
-      return  result
+      return  sub
 }
 //  Last year for the first time ever,
 //  -1 secs
