@@ -4,8 +4,6 @@ import {
   BigPlayButton, ClosedCaptionButton, ControlBar, Player,
 } from 'video-react';
 import 'video-react/dist/video-react.css';
-import video from '../videos/airline.mp4';
-// import subtitle from '../videos/airline.srt'
 
 function Display() {
   return (
@@ -16,7 +14,7 @@ function Display() {
           playsInline
         >
           <BigPlayButton position="center" className="hidden" />
-          <source src={video} />
+          <source src="https://firebasestorage.googleapis.com/v0/b/suboto.appspot.com/o/china.mp4?alt=media&token=e852e3c3-0a00-462a-a2a9-29d813cf2fef" />
 
           <track
             kind="captions"
